@@ -1,0 +1,7 @@
+title: Course Assignments Setup
+
+actions:
+  - scripts:
+    - kool run course-assignments-composer
+    - kool run course-assignments-metadata
+    - kool run course-assignments-fix-records

@@ -1,0 +1,129 @@
+parameters:
+    database_name: medtrainer_test
+    database_host: 'medtrainer_db'
+    database_user: 'root'
+    database_password: 'root'
+
+    slave_database_name: medtrainer_test
+    slave_database_host: 'medtrainer_db'
+    slave_database_user: 'root'
+    slave_database_password: 'root'
+
+    database_session_user: 'root'
+    database_session_password: 'root'
+
+    server: http://medtrainer.local.com
+    server_name: 'medtrainer.local.com'
+    server_url: 'http://%server_name%'
+    httpProtocol: http
+    spa_server_name: 'react.local.com'
+    exclusions_server_name: 'react.local.com'
+    api_production_url: http://certificates.local.com
+    rustici_server: 'http://rustici-engine:8080'
+    rustici_engine_base_url: '%rustici_server%/RusticiEngine/api/v2/'
+    rustici_engine_http_client: GuzzleHttp\Client
+
+    api_credentialing_workflows_uri: http://172.18.19.38
+    api_credentialing_workflows_port: 8080
+
+    business_entity_api_uri: 'http://172.18.19.32:8080'
+
+    user_preferences_api_uri: '172.18.19.32:8080'
+
+    mandrill_master_email: noreply@medtrainer.net
+
+    cred_docs_api_host: '172.18.19.42'
+    cred_docs_api_port: '8080'
+
+    cred_docs_packet_api_host: '172.18.19.41'
+    cred_docs_packet_api_port: '8080'
+
+    notifications_api_host: 'http://notifications-api.medtrainer.net'
+
+    jira_cloud_token: 'secret-token'
+
+    files_staging_api_uri: 'http://172.18.19.39:8080'
+
+    forms_manager_pdf_api_uri: 'http://172.18.19.46:8080'
+
+    # External Facilities API
+    external_facilities_api_host: '172.18.19.44'
+    external_facilities_api_port: '8080'
+
+    # Compliance Coach API
+    api_compliance_coach_uri: http://172.18.19.45
+    api_compliance_coach_port: 8080
+
+    # Cred Tasks API
+    cred_tasks_api_host: '172.18.19.52'
+    cred_tasks_api_port: '8080'
+
+    MESSENGER_TRANSPORT_DSN: amqp://medtrainer:password@medtrainer_queue:5672/%2f
+
+web_profiler:
+    toolbar: true
+
+twig:
+    strict_variables: true
+
+doctrine:
+    orm:
+        auto_generate_proxy_classes: false
+
+monolog:
+    channels: ['inAppReports', 'integrations', 'providerProfile', 'privilegesAppointments', 'credDocs', 'credTasks']
+    handlers:
+        integrations:
+            type: rotating_file
+            path: '%kernel.logs_dir%/integrations/integrations.log'
+            level: error
+            max_files: 5
+            channels: [ 'integrations' ]
+            formatter: monolog.formatter.json
+        main:
+            type:   stream
+            path:   "%kernel.logs_dir%/%kernel.environment%.log"
+            level: warning
+            formatter: monolog.formatter.json
+        in_app_reports:
+            type: rotating_file
+            path: '%kernel.logs_dir%/in-app-reports/in-app-reports.log'
+            level: error
+            max_files: 30
+            channels: ['inAppReports']
+            formatter: monolog.formatter.json
+        provider_profile:
+            type: rotating_file
+            path: '%kernel.logs_dir%/provider-profile/provider-profile.log'
+            level: error
+            max_files: 5
+            channels: ['providerProfile']
+            formatter: monolog.formatter.json
+        privileges_appointments:
+            type: rotating_file
+            path: '%kernel.logs_dir%/privileges-appointments/privileges-appointments.log'
+            level: error
+            max_files: 5
+            channels: ['privilegesAppointments']
+            formatter: monolog.formatter.json
+        cred_docs:
+            type: rotating_file
+            path: '%kernel.logs_dir%/cred-docs/cred-docs.log'
+            level: debug
+            max_files: 5
+            channels: [ 'credDocs' ]
+            formatter: monolog.formatter.json
+        cred_tasks:
+            type: rotating_file
+            path: '%kernel.logs_dir%/cred-tasks/cred-tasks.log'
+            level: debug
+            max_files: 5
+            channels: [ 'credTasks' ]
+            formatter: monolog.formatter.json
+        console:
+            type:   console
+            bubble: false
+        firephp:
+            type:   firephp
+            level:  error
+            formatter: monolog.formatter.json

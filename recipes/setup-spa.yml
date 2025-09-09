@@ -1,0 +1,5 @@
+title: SPA Setup
+
+actions:
+  - scripts:
+    - kool run spa-yarn-install

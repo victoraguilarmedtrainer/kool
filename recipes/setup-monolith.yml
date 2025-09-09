@@ -1,0 +1,9 @@
+title: Setup Monolith
+
+actions:
+  - copy: medtrainer/monolith-local.yml
+    dst: lms-medtrainer/symfony/app/config/local.yml
+    
+  - scripts:
+    - kool run monolith-composer
+    - kool run monolith-setup-db

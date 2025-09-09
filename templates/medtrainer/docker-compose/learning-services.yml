@@ -1,0 +1,124 @@
+services:
+  course-assignments:
+    build:
+      context: irene/reverse-proxy
+      target: development
+      args:
+        UID: ${UID}
+        GID: ${GID}
+    volumes:
+      - ${COURSE_ASSIGNMENTS_CODE_PATH_HOST}:/var/www/course-assignments
+      - ${PWD}/irene/reverse-proxy/sites/course-assignments.conf:/etc/nginx/sites-enabled/course-assignments.conf
+    ports:
+      - "82"
+      - "8082:8082"
+    networks: [backend]
+    depends_on:
+      - gateway
+      - course-assignments-api
+      - course-assignments-worker
+
+  course-assignments-worker:
+    build:
+      target: development
+      dockerfile: irene/course-assignments-api/Dockerfile
+      args:
+        APP_DIR: ${CONTAINER_APP_PATH}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      - XDEBUG_SESSION=PHPSTORM_COURSE_ASSIGNMENTS
+      - PHP_IDE_CONFIG=serverName=${SERVER_NAME}
+      - XDEBUG_CONFIG="idekey=PHPSTORM_COURSE_ASSIGNMENTS_BACKEND"
+      - XDEBUG_MODE=debug
+    volumes:
+      - ${COURSE_ASSIGNMENTS_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
+      - ./coverage:/opt/phpstorm-coverage
+    tty: true
+    networks: [backend]
+    command: bin/console messenger:consume main -v --memory-limit=1GB --profile --no-reset
+    depends_on:
+      medtrainer_db:
+        condition: service_healthy
+      medtrainer_queue:
+        condition: service_healthy
+
+  course-assignments-api:
+    build:
+      target: development
+      dockerfile: irene/course-assignments-api/Dockerfile
+      args:
+        APP_DIR: ${CONTAINER_APP_PATH}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      - XDEBUG_SESSION=PHPSTORM_COURSE_ASSIGNMENTS_BACKEND
+      - PHP_IDE_CONFIG=serverName=${SERVER_NAME}
+      - XDEBUG_CONFIG="idekey=PHPSTORM_COURSE_ASSIGNMENTS_BACKEND"
+      - XDEBUG_MODE=debug
+    volumes:
+      - ${COURSE_ASSIGNMENTS_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
+      - ./coverage:/opt/phpstorm-coverage
+    tty: true
+    networks: [backend]
+    command: php-fpm --nodaemonize
+    depends_on:
+      medtrainer_queue:
+        condition: service_healthy
+
+  learning-notifications:
+    build:
+      target: development
+      dockerfile: irene/learning-notifications/Dockerfile
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      - XDEBUG_SESSION=PHPSTORM_PAST_DUE_NOTIFICATION
+      - PHP_IDE_CONFIG=serverName=learning-notifications
+      - XDEBUG_CONFIG="idekey=PHPSTORM_PAST_DUE_NOTIFICATION"
+      - XDEBUG_MODE=debug
+    volumes:
+      - ${PAST_DUE_NOTIFICATION_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
+      - ./coverage:/opt/phpstorm-coverage
+    tty: true
+    networks: [backend]
+    command: bin/console messenger:consume scheduler_default main --memory-limit=128M -vv --profile
+    depends_on:
+      medtrainer_db:
+        condition: service_healthy
+
+  provider-profile:
+    build:
+      context: irene/reverse-proxy
+      target: development
+      args:
+        UID: ${UID}
+        GID: ${GID}
+    volumes:
+      - ${PROVIDER_PROFILE_CODE_PATH_HOST}:/var/www/provider-profile
+      - ${PWD}/irene/reverse-proxy/sites/provider-profile.conf:/etc/nginx/sites-enabled/provider-profile.conf
+    ports:
+      - "83"
+      - "8083:8083"
+    networks: [backend]
+    depends_on:
+      - gateway
+      - provider-profile-api
+
+  provider-profile-api:
+    build:
+      target: development
+      dockerfile: irene/php-fpm/Dockerfile
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      - XDEBUG_SESSION=PHPSTORM_PROVIDER_PROFILE_BACKEND
+      - PHP_IDE_CONFIG=serverName=provider-profile-api
+      - XDEBUG_CONFIG="idekey=PHPSTORM_PROVIDER_PROFILE_BACKEND"
+      - XDEBUG_MODE=debug
+    volumes:
+      - ${PROVIDER_PROFILE_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
+      - ./coverage:/opt/phpstorm-coverage
+    tty: true
+    command: php-fpm --nodaemonize
+    networks: [backend]

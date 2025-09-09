@@ -1,0 +1,63 @@
+# Which tags are related to this preset; used for branching the choices on preset wizard
+tags: [ MedTrainer]
+
+name: Learning
+
+# Create defines the workflow for creating a new Project where this preset can then be installed
+create:
+  - name: Creating new app
+    actions:
+      - scripts:
+        - mkdir ${CREATE_DIRECTORY}
+
+
+# Preset defines the workflow for installing this preset in the current working directory
+preset:
+  - name: Clone repositories
+    actions:
+      - scripts:
+        - git clone git@github.com:MedTrainer365/medtrainer-react.git
+        - git clone git@github.com:MedTrainer365/lms-medtrainer.git
+        - git clone git@github.com:MedTrainer365/course-assignments.git
+        - git clone git@github.com:MedTrainer365/provider-profile-api.git
+        - git clone git@github.com:victoraguilarmedtrainer/irene.git
+
+  - name: Copy config files
+    actions:
+      - copy: medtrainer/irene.env
+        dst: .env
+
+      - copy: medtrainer/course-assignments.env.dist
+        dst: course-assignments/.env.dist
+
+      - copy: medtrainer/docker-compose/docker-compose-base.yml
+        dst: docker-compose-development.yml
+
+      - merge: medtrainer/docker-compose/monolith-services.yml
+        dst: docker-compose-development.yml
+
+      - merge: medtrainer/docker-compose/learning-services.yml
+        dst: docker-compose-development.yml
+
+      - merge: medtrainer/docker-compose/external-services.yml
+        dst: docker-compose-development.yml
+
+      - copy: medtrainer/kool.yml
+        dst: kool.yml
+
+  - name: Build containers
+    actions:
+      - scripts:
+        - docker compose build monolith-backend
+        - docker compose build spa
+        - docker compose build course-assignments
+        - docker compose build rustici-engine
+        - docker compose build provider-profile
+        - kool start medtrainer_db rustici-engine-db medtrainer_queue
+
+  - name: Setup
+    actions:
+      - recipe: setup-spa
+      - recipe: setup-rustici-engine
+      - recipe: setup-monolith
+      - recipe: setup-course-assignments

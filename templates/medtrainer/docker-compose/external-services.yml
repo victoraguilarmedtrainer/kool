@@ -1,0 +1,168 @@
+services:
+  medtrainer_db:
+    image: mysql:8.0.15
+    volumes:
+      - ${DATA_PATH_HOST}/mysql:/var/lib/mysql
+      - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+      - ${MYSQL_CONFIG}:/etc/mysql/conf.d/
+    environment:
+      - MYSQL_DATABASE=${MONOLITH_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:3306"
+    networks: [backend]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  gateway:
+    image: kong/kong-gateway:3.3-alpine
+    environment:
+      KONG_DATABASE: off
+      KONG_PG_HOST: kong-database
+      KONG_PG_DATABASE: kong
+      KONG_PG_PASSWORD: kongpass
+      kONG_PG_USER: kong
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_LISTEN: 0.0.0.0:80
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    volumes:
+      - ./irene/kong:/kong/declarative
+    ports:
+      - "80:80"
+      - "8443:8443"
+      - "8001:8001"
+      - "8444:8444"
+      - "8002:8002"
+      - "8445:8445"
+      - "8003:8003"
+      - "8004:8004"
+    networks: [backend]
+
+  medtrainer_queue:
+    image: rabbitmq:3-management
+    networks: [backend]
+    ports:
+      - ${RABBITMQ_PORT}:${RABBITMQ_PORT}
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  mailer:
+    image: schickling/mailcatcher
+    ports: ["1025", "1080:1080"]
+    networks: [backend]
+
+  rustici-engine-db:
+    image: mysql:8.0.22
+    volumes:
+      - ${DATA_PATH_HOST}/rustici_mysql:/var/lib/mysql
+      - ${MYSQL_CONFIG}:/etc/mysql/conf.d/
+    ports:
+      - "${RUSTICI_ENGINE_DB_PORT}:3306"
+    networks: [backend]
+    cap_add:
+      - SYS_NICE
+    environment:
+      - MYSQL_DATABASE=${RUSTICI_ENGINE_DB_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${RUSTICI_ENGINE_DB_ROOT_PASSWORD}
+      - MYSQL_USER=${RUSTICI_ENGINE_DB_USERNAME}
+      - MYSQL_PASSWORD=${RUSTICI_ENGINE_DB_PASSWORD}
+      - MYSQL_PORT=${RUSTICI_ENGINE_DB_PORT}
+      - TZ=UTC
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${RUSTICI_ENGINE_DB_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  rustici-engine-installer:
+    build:
+      context: irene/rustici-engine-installer
+      args:
+        MYSQL_JAVA_CONN_VERSION: ${MYSQL_JAVA_CONN_VERSION}
+    networks: [backend]
+    environment:
+      RUSTICI_ENGINE_DB_HOSTNAME: ${RUSTICI_ENGINE_DB_HOSTNAME}
+      RUSTICI_ENGINE_DB_USERNAME: ${RUSTICI_ENGINE_DB_USERNAME}
+      RUSTICI_ENGINE_DB_PASSWORD: ${RUSTICI_ENGINE_DB_PASSWORD}
+      RUSTICI_ENGINE_DB_DATABASE: ${RUSTICI_ENGINE_DB_DATABASE}
+    depends_on:
+      rustici-engine-db:
+        condition: service_healthy
+
+  rustici-engine:
+    build:
+      context: irene/rustici-engine
+      args:
+        MYSQL_JAVA_CONN_VERSION: ${MYSQL_JAVA_CONN_VERSION}
+        RUSTICI_ENGINE_DB_HOSTNAME: ${RUSTICI_ENGINE_DB_HOSTNAME}
+        RUSTICI_ENGINE_DB_USERNAME: ${RUSTICI_ENGINE_DB_USERNAME}
+        RUSTICI_ENGINE_DB_PASSWORD: ${RUSTICI_ENGINE_DB_PASSWORD}
+        RUSTICI_ENGINE_DB_DATABASE: ${RUSTICI_ENGINE_DB_DATABASE}
+        RUSTICI_ENGINE_API_USERNAME: ${RUSTICI_ENGINE_API_USERNAME}
+        RUSTICI_ENGINE_API_PASSWORD: ${RUSTICI_ENGINE_API_PASSWORD}
+        RUSTICI_ENGINE_API_IMPORT_RESULTS_POST_BACK_URL: ${RUSTICI_ENGINE_API_IMPORT_RESULTS_POST_BACK_URL}
+        RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_URL: ${RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_URL}
+        RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_USER: ${RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_USER}
+        RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_PASSWORD: ${RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_PASSWORD}
+        RUSTICI_ENGINE_FILE_PATH_TO_CONTENT_ROOT: ${RUSTICI_ENGINE_FILE_PATH_TO_CONTENT_ROOT}
+        RUSTICI_ENGINE_WEB_PATH_TO_CONTENT_ROOT: ${RUSTICI_ENGINE_WEB_PATH_TO_CONTENT_ROOT}
+        RUSTICI_ENGINE_UPLOADED_ZIPPED_PACKAGES_PATH: ${RUSTICI_ENGINE_UPLOADED_ZIPPED_PACKAGES_PATH}
+        RUSTICI_ENGINE_REMOTE_DELIVER_PAGE_URL: http://${RUSTICI_SERVER_NAME}${RUSTICI_ENGINE_REMOTE_DELIVER_PAGE_PATH}
+        RUSTICI_ENGINE_REDIRECT_ON_EXIT_URL: ${RUSTICI_ENGINE_REDIRECT_ON_EXIT_URL}
+    volumes:
+      - ${DATA_PATH_HOST}/rustici-engine/assets:/opt/rustici/webapps/courses/default
+    ports:
+      - "8080"
+    depends_on:
+      rustici-engine-db:
+        condition: service_healthy
+    networks: [backend]
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - ${DATA_PATH_HOST}/azurite:/data
+    networks: [backend]

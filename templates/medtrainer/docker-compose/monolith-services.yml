@@ -1,0 +1,84 @@
+services:
+  monolith-backend:
+    working_dir: ${CONTAINER_APP_PATH}
+    build:
+      target: development
+      dockerfile: irene/monolith-backend/7.1/Dockerfile
+      args:
+        UID: ${UID}
+        GID: ${GID}
+    environment:
+      - PHP_IDE_CONFIG=serverName=irene
+      - SYMFONY_ENVIRONMENT=dev
+      - SYMFONY_DEBUG=1
+      - SELENIUM_SERVER_URL=http://selenium:4444/wd/hub
+      - SELENIUM_ENVIRONMENT_BASE_URL=http://lms
+      - SELENIUM_DEBUG=true
+      - SPA_SERVER=http://${SPA_SERVER_NAME}
+    volumes:
+      - ${LMS_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      medtrainer_queue:
+        condition: service_healthy
+      medtrainer_db:
+        condition: service_healthy
+    networks: [ backend ]
+    user: www-data
+
+  monolith:
+    build:
+      context: irene/reverse-proxy
+      target: development
+      args:
+        UID: ${UID}
+        GID: ${GID}
+    volumes:
+      - ${LMS_CODE_PATH_HOST}:/var/www/lms
+      - ${DATA_PATH_HOST}/rustici-engine/assets:/rustici-engine/courses/default
+      - ${PWD}/irene/reverse-proxy/sites/monolith.conf:/etc/nginx/sites-enabled/monolith.conf
+      - ${PWD}/irene/reverse-proxy/sites/rustici.conf:/etc/nginx/sites-enabled/rustici.conf
+    ports:
+      - "80"
+      - "8080:8080"
+    networks: [ backend ]
+    depends_on:
+      monolith-backend:
+        condition: service_started
+      monolith-nodejs:
+        condition: service_started
+      gateway:
+        condition: service_started
+
+  monolith-nodejs:
+    working_dir: ${CONTAINER_APP_PATH}
+    build:
+      dockerfile: irene/monolith-nodejs/Dockerfile
+      target: development
+    environment:
+      SPA_SERVER: http://${SPA_SERVER_NAME}
+    volumes:
+      - ${LMS_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
+    entrypoint:
+      - sh
+      - -c
+      - npm install && npm run watch
+
+  spa:
+    build:
+      dockerfile: irene/spa/Dockerfile
+      args:
+        - NODE_ENV=development
+      target: development
+    environment:
+      LMS_URL: ${LMS_URL}
+      SPA_URL: ${SPA_URL}
+      SPA_SERVER_NAME: ${SPA_SERVER_NAME}
+    volumes:
+      - ./medtrainer-react:${CONTAINER_APP_PATH}
+    ports:
+      - "8081:8081"
+    tty: true
+    command: webpack serve --config=configs/webpack/moduleFedDev.js --client-progress --port 8081 --env LMS_URL=$LMS_URL --env APP_URL=$SPA_URL --env NODE_MODE=$NODE_ENV
+    networks: [ backend ]
