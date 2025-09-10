@@ -1,7 +1,0 @@
-title: "MySQL 8"
-
-actions:
-  - merge: database/mysql8.yml
-    dst: docker-compose.yml
-  - merge: scripts/mysql.yml
-    dst: kool.yml

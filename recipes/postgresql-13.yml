@@ -1,7 +1,0 @@
-title: "PostgreSQL 13"
-
-actions:
-  - merge: database/postgresql13.yml
-    dst: docker-compose.yml
-  - merge: scripts/postgresql.yml
-    dst: kool.yml

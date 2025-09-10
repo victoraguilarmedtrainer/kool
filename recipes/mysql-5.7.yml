@@ -1,7 +1,0 @@
-title: "MySQL 5.7"
-
-actions:
-  - merge: database/mysql57.yml
-    dst: docker-compose.yml
-  - merge: scripts/mysql.yml
-    dst: kool.yml

@@ -1,5 +1,0 @@
-title: "Microservice: PDF generator"
-
-actions:
-  - merge: misc/pdf.yml
-    dst: docker-compose.yml

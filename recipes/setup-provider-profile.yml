@@ -3,3 +3,4 @@ title: Course Assignments Setup
 actions:
   - scripts:
     - kool run provider-profile-composer
+    - kool start provider-profile

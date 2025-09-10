@@ -1,5 +1,0 @@
-title: "PHP 7.4"
-
-actions:
-  - merge: app/php74.yml
-    dst: docker-compose.yml

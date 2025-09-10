@@ -1,7 +1,0 @@
-scripts:
-  # yarn - helpers for JS handling
-  yarn: kool docker kooldev/node:20 yarn
-  setup:
-    - kool run yarn install
-  reset:
-    - kool run yarn install

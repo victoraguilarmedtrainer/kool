@@ -1,3 +1,0 @@
-scripts:
-  php: kool exec app php
-  wp: kool exec app wp

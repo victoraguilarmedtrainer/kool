@@ -27,10 +27,17 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     environment:
-      - XDEBUG_SESSION=PHPSTORM_COURSE_ASSIGNMENTS
-      - PHP_IDE_CONFIG=serverName=${SERVER_NAME}
-      - XDEBUG_CONFIG="idekey=PHPSTORM_COURSE_ASSIGNMENTS_BACKEND"
-      - XDEBUG_MODE=debug
+      XDEBUG_SESSION: PHPSTORM_COURSE_ASSIGNMENTS
+      PHP_IDE_CONFIG: serverName=${SERVER_NAME}
+      XDEBUG_CONFIG: "idekey=PHPSTORM_COURSE_ASSIGNMENTS_BACKEND"
+      XDEBUG_MODE: debug
+      DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@medtrainer_db/${MONOLITH_DATABASE}?serverVersion=8&charset=utf8"
+      MESSENGER_TRANSPORT_DSN: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@medtrainer_queue:5672/%2F"
+      RUSTICI_ENGINE_BASE_URL: http://rustici-engine:8080/RusticiEngine/api/v2
+      RUSTICI_ENGINE_API_USERNAME: ${RUSTICI_ENGINE_API_USERNAME}
+      RUSTICI_ENGINE_API_PASSWORD: ${RUSTICI_ENGINE_API_PASSWORD}
+      RUSTICI_ENGINE_WEBHOOK_USERNAME: ${RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_USER}
+      RUSTICI_ENGINE_WEBHOOK_PASSWORD: ${RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_PASSWORD}
     volumes:
       - ${COURSE_ASSIGNMENTS_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
       - ./coverage:/opt/phpstorm-coverage
@@ -52,10 +59,17 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     environment:
-      - XDEBUG_SESSION=PHPSTORM_COURSE_ASSIGNMENTS_BACKEND
-      - PHP_IDE_CONFIG=serverName=${SERVER_NAME}
-      - XDEBUG_CONFIG="idekey=PHPSTORM_COURSE_ASSIGNMENTS_BACKEND"
-      - XDEBUG_MODE=debug
+      XDEBUG_SESSION: PHPSTORM_COURSE_ASSIGNMENTS_BACKEND
+      PHP_IDE_CONFIG: serverName=${SERVER_NAME}
+      XDEBUG_CONFIG: "idekey=PHPSTORM_COURSE_ASSIGNMENTS_BACKEND"
+      XDEBUG_MODE: debug
+      DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@medtrainer_db/${MONOLITH_DATABASE}?serverVersion=8&charset=utf8"
+      MESSENGER_TRANSPORT_DSN: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@medtrainer_queue:5672/%2F"
+      RUSTICI_ENGINE_BASE_URL: http://rustici-engine:8080/RusticiEngine/api/v2
+      RUSTICI_ENGINE_API_USERNAME: ${RUSTICI_ENGINE_API_USERNAME}
+      RUSTICI_ENGINE_API_PASSWORD: ${RUSTICI_ENGINE_API_PASSWORD}
+      RUSTICI_ENGINE_WEBHOOK_USERNAME: ${RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_USER}
+      RUSTICI_ENGINE_WEBHOOK_PASSWORD: ${RUSTICI_ENGINE_API_ROLLUP_REGISTRATION_POST_BACK_PASSWORD}
     volumes:
       - ${COURSE_ASSIGNMENTS_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
       - ./coverage:/opt/phpstorm-coverage
@@ -106,19 +120,14 @@ services:
       - provider-profile-api
 
   provider-profile-api:
-    build:
-      target: development
-      dockerfile: irene/php-fpm/Dockerfile
-    extra_hosts:
-      - host.docker.internal:host-gateway
+    image: medtrainer.azurecr.io/provider-profile-api-php:latest
     environment:
-      - XDEBUG_SESSION=PHPSTORM_PROVIDER_PROFILE_BACKEND
-      - PHP_IDE_CONFIG=serverName=provider-profile-api
-      - XDEBUG_CONFIG="idekey=PHPSTORM_PROVIDER_PROFILE_BACKEND"
-      - XDEBUG_MODE=debug
-    volumes:
-      - ${PROVIDER_PROFILE_CODE_PATH_HOST}:${CONTAINER_APP_PATH}
-      - ./coverage:/opt/phpstorm-coverage
-    tty: true
+      APP_NAME: provider-profile-api
+      APP_ENV: prod
+      APP_DEBUG: 0
+      APP_SECRET: ABC
+      LMS_DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@medtrainer_db:3306/${MONOLITH_DATABASE}?serverVersion=8.0&charset=UTF8"
+      LMS_DATABASE_URL_RO: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@medtrainer_db:3306/${MONOLITH_DATABASE}?serverVersion=8.0&charset=UTF8"
+      MESSENGER_TRANSPORT_DSN: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@medtrainer_queue:5672"
     command: php-fpm --nodaemonize
     networks: [backend]

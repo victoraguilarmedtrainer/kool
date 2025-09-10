@@ -1,0 +1,14 @@
+title: Generate docker-compose.yaml
+
+actions:
+  - copy: docker-compose/docker-compose-base.yml
+    dst: docker-compose-development.yml
+
+  - merge: docker-compose/monolith-services.yml
+    dst: docker-compose-development.yml
+
+  - merge: docker-compose/learning-services.yml
+    dst: docker-compose-development.yml
+
+  - merge: docker-compose/external-services.yml
+    dst: docker-compose-development.yml

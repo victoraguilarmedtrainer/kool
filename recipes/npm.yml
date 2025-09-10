@@ -1,5 +1,0 @@
-title: "npm - Node Package Manager"
-
-actions:
-  - merge: scripts/npm.yml
-    dst: kool.yml

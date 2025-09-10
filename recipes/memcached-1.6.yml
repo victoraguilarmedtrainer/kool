@@ -1,5 +1,0 @@
-title: "Memcached 1.6"
-
-actions:
-  - merge: cache/memcached16.yml
-    dst: docker-compose.yml

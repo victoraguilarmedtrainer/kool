@@ -1,5 +1,0 @@
-title: "PHP 8.1"
-
-actions:
-  - merge: app/php81.yml
-    dst: docker-compose.yml

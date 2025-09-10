@@ -60,6 +60,9 @@ parameters:
 
     MESSENGER_TRANSPORT_DSN: amqp://medtrainer:password@medtrainer_queue:5672/%2f
 
+    provider_profile_api_host: provider-profile
+    provider_profile_api_port: '83'
+
 web_profiler:
     toolbar: true
 

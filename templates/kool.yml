@@ -1,6 +1,63 @@
-# Here you can define shortcuts and aliases to common tasks (commands)
-# you will run in your local environment or CI or deploy.
-#  Use the scripts defined below with:
-#    $ kool run <script>
-# Learn more at: https://kool.dev/docs/getting-started/how-it-works#koolyml
 scripts:
+
+  min:
+    - > 
+      kool start
+      spa
+      monolith
+      course-assignments
+
+
+  reset-databases:
+    - kool run rustici-engine-drop-db
+    - kool run rustici-engine-setup-db
+    - kool run monolith-create-db
+    - kool run monolith-setup-db
+    - kool run course-assignments-fix-records
+
+  #########################
+  ## Monolith
+  #########################
+
+  monolith-create-db: > 
+    docker compose run --rm medtrainer_db mysql 
+    -hmedtrainer_db 
+    -u${MYSQL_USER}
+    -p${MYSQL_PASSWORD}
+    -e "DROP DATABASE if exists ${MONOLITH_DATABASE}; CREATE database ${MONOLITH_DATABASE}"
+  monolith-composer: docker compose run --rm monolith-backend composer install --no-interaction
+  monolith-setup-db: docker compose run --rm monolith-backend bin/console medtrainer:setup-database
+
+
+  #########################
+  ## SPA
+  #########################
+
+  spa-yarn-install: docker compose run --rm spa yarn install
+
+
+  #########################
+  ## Rustici Engine
+  #########################
+
+  rustici-engine-drop-db: > 
+    docker compose run --rm rustici-engine-db mysql
+    -hrustici-engine-db
+    -u${RUSTICI_ENGINE_DB_USERNAME} 
+    -p${RUSTICI_ENGINE_DB_ROOT_PASSWORD} 
+    -e "DROP DATABASE if exists ${RUSTICI_ENGINE_DB_DATABASE}; CREATE database ${RUSTICI_ENGINE_DB_DATABASE}"
+  rustici-engine-setup-db: docker compose run --rm rustici-engine-installer    
+
+
+  #########################
+  ## Course Assignments
+  #########################
+
+  course-assignments-composer: docker compose run --rm -e XDEBUG_MODE=off course-assignments-worker composer install
+  course-assignments-metadata: docker compose run --rm -e XDEBUG_MODE=off course-assignments-worker bin/console doctrine:migrations:sync-metadata-storage
+  course-assignments-fix-records: docker compose run --rm -e XDEBUG_MODE=off course-assignments-worker bin/console tools:migrate-assignment-date    
+
+  #########################
+  ## Provider Profile
+  #########################
+  provider-profile-composer: docker compose run --rm -e XDEBUG_MODE=off provider-profile-api composer install

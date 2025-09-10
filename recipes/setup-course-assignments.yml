@@ -2,6 +2,11 @@ title: Course Assignments Setup
 
 actions:
   - scripts:
+    - kool start medtrainer_db
+    - git clone --depth 1 --single-branch --branch main git@github.com:MedTrainer365/course-assignments.git
+
+  - scripts:
     - kool run course-assignments-composer
     - kool run course-assignments-metadata
     - kool run course-assignments-fix-records
+    - kool start course-assignments

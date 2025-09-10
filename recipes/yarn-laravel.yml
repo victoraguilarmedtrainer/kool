@@ -1,7 +1,0 @@
-title: "Yarn (Laravel)"
-
-actions:
-  - merge: scripts/yarn-laravel.yml
-    dst: kool.yml
-  - merge: misc/yarn-vitejs.yml
-    dst: docker-compose.yml

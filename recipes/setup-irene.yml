@@ -1,0 +1,20 @@
+title: Irene Setup
+
+actions:
+  - scripts:
+    - git clone git@github.com:victoraguilarmedtrainer/irene.git
+  
+  - copy: .env
+    dst: .env
+
+  - recipe: generate-docker-compose
+
+  - copy: kool.yml
+    dst: kool.yml
+
+  - scripts:
+    - > 
+      kool start 
+      medtrainer_db 
+      rustici-engine-db
+      medtrainer_queue

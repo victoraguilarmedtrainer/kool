@@ -1,9 +1,13 @@
 title: Setup Monolith
 
 actions:
-  - copy: medtrainer/monolith-local.yml
+  - scripts:
+    - git clone --depth 1 --single-branch --branch master git@github.com:MedTrainer365/lms-medtrainer.git
+    
+  - copy: monolith-local.yml
     dst: lms-medtrainer/symfony/app/config/local.yml
     
   - scripts:
     - kool run monolith-composer
     - kool run monolith-setup-db
+    - kool start monolith
